@@ -15,27 +15,6 @@ var builder = new ConfigurationBuilder()
 
 IConfiguration configuration = builder.Build();
 
-var json_prompt = """
-                Ensure the output is valid JSON.
-                 It should be in the schema: 
-                < output >
-                {
-                "ingredients": [
-                                    {
-                "name": "<ingredient_name1>",
-                                    "quantity": "<quantity1>",
-                                    "unit": "<unit1>",
-                                    },
-                                    {
-                "name": "<ingredient_name2>",
-                                    "quantity": "<quantity2>",
-                                    "unit": "<unit2>",
-                                    }
-                                ]
-                                }
-                </ output >
-                """;
-
 Kernel kernel = Kernel.CreateBuilder()
    
    .AddAzureOpenAIChatCompletion(deploymentName: "gpt-4o", endpoint: configuration["OpenAI:apiUrl"], apiKey: configuration["OpenAI:apiKey"])
