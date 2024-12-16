@@ -21,37 +21,10 @@ Kernel kernel = Kernel.CreateBuilder()
     //.AddOpenAIChatCompletion(modelId:"phi3.5",endpoint:new Uri("http://localhost:11434"),apiKey:null)
     .Build();
 
-// Initialize ChatResponseFormat object with JSON schema of desired response format.
-ChatResponseFormat chatResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-    jsonSchemaFormatName: "recipe",
-    jsonSchema: BinaryData.FromString("""
-        {
-            "type": "object",
-            "properties": {
-                "Ingredients": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "Name": { "type": "string" },
-                            "Quantity": { "type": "string" },
-                            "Unit": { "type": "string" }
-                        },
-                        "required": ["Name", "Quantity", "Unit"],
-                        "additionalProperties": false
-                    }
-                }
-            },
-            "required": ["Ingredients"],
-            "additionalProperties": false
-        }
-        """),
-    jsonSchemaIsStrict: true);
-
 // Specify response format by setting ChatResponseFormat object in prompt execution settings.
 var executionSettings = new OpenAIPromptExecutionSettings
 {
-    ResponseFormat = chatResponseFormat
+    ResponseFormat = typeof(Recipe)
 };
 
 // Send a request and pass prompt execution settings with desired response format.
@@ -59,10 +32,7 @@ var result = await kernel.InvokePromptAsync("What are the ingredients needed to 
 
 Console.WriteLine(result);
 
-// Deserialize string response to a strong type to access type properties.
-// At this point, the deserialization logic won't fail, because MovieResult type was specified as desired response format.
-// This ensures that response string is a serialized version of MovieResult type.
-var movieResult = JsonSerializer.Deserialize<Recipe>(result.ToString());
+var recipe = JsonSerializer.Deserialize<Recipe>(result.ToString());
 
 // Define response models
 public class Recipe
