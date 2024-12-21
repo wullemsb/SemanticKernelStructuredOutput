@@ -4,10 +4,6 @@ using System.Text;
 using System.Text.Json;
 
 
-var httpClient = new HttpClient();
-httpClient.BaseAddress = new Uri("http://localhost:11434");
-httpClient.Timeout = TimeSpan.FromSeconds(120);
-
 var uri = new Uri("http://localhost:11434");
 var ollama = new OllamaApiClient(uri);
 
