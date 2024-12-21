@@ -7,18 +7,22 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenAI.Chat;
 using System.Text.Json;
 
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0010,SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
 var builder = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddUserSecrets<Program>();
 
+var httpClient = new HttpClient();
+httpClient.BaseAddress = new Uri("http://localhost:11434");
+httpClient.Timeout = TimeSpan.FromSeconds(120);
+
 IConfiguration configuration = builder.Build();
 
 Kernel kernel = Kernel.CreateBuilder()
    
-   .AddAzureOpenAIChatCompletion(deploymentName: "gpt-4o", endpoint: configuration["OpenAI:apiUrl"], apiKey: configuration["OpenAI:apiKey"])
-    //.AddOpenAIChatCompletion(modelId:"phi3.5",endpoint:new Uri("http://localhost:11434"),apiKey:null)
+    .AddAzureOpenAIChatCompletion(deploymentName: "gpt-4o", endpoint: configuration["OpenAI:apiUrl"], apiKey: configuration["OpenAI:apiKey"])
+    //.AddOllamaChatCompletion("llama3.1",httpClient: httpClient)
     .Build();
 
 // Initialize ChatResponseFormat object with JSON schema of desired response format.
