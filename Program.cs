@@ -1,69 +1,35 @@
-﻿using Microsoft.Extensions.Configuration;
-
-// Initialize kernel.
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
-using OpenAI.Chat;
+﻿using OllamaSharp;
+using OllamaSharp.Models;
+using System.Text;
 using System.Text.Json;
 
-#pragma warning disable SKEXP0010,SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-var builder = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddUserSecrets<Program>();
 
 var httpClient = new HttpClient();
 httpClient.BaseAddress = new Uri("http://localhost:11434");
 httpClient.Timeout = TimeSpan.FromSeconds(120);
 
-IConfiguration configuration = builder.Build();
+var uri = new Uri("http://localhost:11434");
+var ollama = new OllamaApiClient(uri);
 
-Kernel kernel = Kernel.CreateBuilder()
-   
-    .AddAzureOpenAIChatCompletion(deploymentName: "gpt-4o", endpoint: configuration["OpenAI:apiUrl"], apiKey: configuration["OpenAI:apiKey"])
-    //.AddOllamaChatCompletion("llama3.1",httpClient: httpClient)
-    .Build();
+ollama.SelectedModel = "llama3.1:latest";
 
-// Initialize ChatResponseFormat object with JSON schema of desired response format.
-ChatResponseFormat chatResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-    jsonSchemaFormatName: "recipe",
-    jsonSchema: BinaryData.FromString("""
-        {
-            "type": "object",
-            "properties": {
-                "Ingredients": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "Name": { "type": "string" },
-                            "Quantity": { "type": "string" },
-                            "Unit": { "type": "string" }
-                        },
-                        "required": ["Name", "Quantity", "Unit"],
-                        "additionalProperties": false
-                    }
-                }
-            },
-            "required": ["Ingredients"],
-            "additionalProperties": false
-        }
-        """),
-    jsonSchemaIsStrict: true);
-
-// Specify response format by setting ChatResponseFormat object in prompt execution settings.
-var executionSettings = new OpenAIPromptExecutionSettings
+var request = new GenerateRequest()
 {
-    ResponseFormat = chatResponseFormat
+    Prompt = "What are the ingredients needed to prepare a Christmas Turkey?",
+    Format = JsonSchema.ToJsonSchema(typeof(Recipe))
 };
 
-// Send a request and pass prompt execution settings with desired response format.
-var result = await kernel.InvokePromptAsync("What are the ingredients needed to prepare a Christmas Turkey?", new(executionSettings));
+var result = new StringBuilder();
 
-Console.WriteLine(result);
+await foreach (var stream in ollama.GenerateAsync(request))
+{
+    result.Append(stream.Response);
+    Console.Write(stream.Response);
+}
 
 var recipe= JsonSerializer.Deserialize<Recipe>(result.ToString());
+
+Console.ReadLine();
 
 // Define response models
 public class Recipe
@@ -78,4 +44,3 @@ public class Ingredient
     public string Unit { get; set; }
 }
 
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
